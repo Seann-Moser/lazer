@@ -210,7 +210,7 @@
 <script>
     const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
     const states = ["Off", "Configuring", "Slow", "Medium", "Fast"];
-
+    const statesIndex = [0, 1, 2, 3, 4];
     /* --- Data Fetching and UI Rendering --- */
     async function fetchSettings() {
         // Mock API call for demonstration, replace with actual fetch
@@ -250,10 +250,21 @@
         const container = document.getElementById(`day-${dayIndex}`);
         const div = document.createElement('div');
         div.className = 'schedule';
+        let selectedStateValue;
+// 1. Check if the incoming schedule.state is a number (an index)
+        if (typeof schedule.state === 'number' && schedule.state >= 0 && schedule.state < states.length) {
+            // If it's a valid index, get the corresponding state name
+            selectedStateValue = states[schedule.state];
+        } else {
+            // 2. Otherwise, assume it's already the state name (a string)
+            selectedStateValue = schedule.state;
+        }
 
+// Generate the full list of <option> tags, setting the correct one as 'selected'
         const stateOptions = states.map(state =>
-            `<option value="${state}" ${schedule.state === state ? "selected" : ""}>${state}</option>`
+            `<option value="${state}" ${selectedStateValue === state ? "selected" : ""}>${state}</option>`
         ).join("");
+
 
         div.innerHTML = `
         <label>Start Time

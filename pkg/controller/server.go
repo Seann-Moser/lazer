@@ -72,5 +72,6 @@ func (c *Controller) handleSaveSettings(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		log.Printf("failed saving config file")
 	}
+
 	w.WriteHeader(http.StatusOK)
 }

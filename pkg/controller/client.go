@@ -95,7 +95,10 @@ func New(server bool) (*Controller, error) {
 		MaxXAngle: 180,
 		MaxYAngle: 180,
 	}
-	data, _ := os.ReadFile(configFile)
+	data, err := os.ReadFile(configFile)
+	if err != nil {
+		log.Printf("failed loading in config file %s\n", err.Error())
+	}
 	if data != nil {
 		err = json.Unmarshal(data, &config)
 		if err != nil {
