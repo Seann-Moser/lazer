@@ -1,0 +1,15 @@
+[Unit]
+Description=My Go App on Boot
+After=network.target
+
+[Service]
+ExecStart=/home/ubuntu/lazer run
+Restart=on-failure
+User=ubuntu
+StandardOutput=journal
+StandardError=journal
+WorkingDirectory=/home/ubuntu
+Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+[Install]
+WantedBy=multi-user.target

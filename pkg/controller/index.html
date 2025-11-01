@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Schedule Config - Improved UX</title>
+    <style>
+        /* --- General Styling and Variables --- */
+        :root {
+            --bg-color: #f0f2f5; /* Lighter, modern background */
+            --primary-color: #1877f2; /* A strong blue for actions */
+            --accent-color: #125cb7;
+            --card-bg: #ffffff;
+            --border-color: #e0e0e0;
+            --font-color: #1c1e21; /* Darker, more legible font */
+            --success-color: #4CAF50;
+            --error-color: #f44336;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--font-color);
+            padding: 20px;
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        /* --- Header and Layout --- */
+        .container {
+            max-width: 900px; /* Max width for readability */
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: var(--primary-color);
+            font-size: 2em;
+            font-weight: 600;
+        }
+
+        /* --- Day Section (Card) --- */
+        .day-section {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); /* Stronger, modern shadow */
+        }
+
+        .day-section h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            border-bottom: 2px solid var(--primary-color); /* Highlight day */
+            color: var(--primary-color);
+        }
+
+        /* --- Schedule Entry Layout --- */
+        .schedule {
+            display: grid; /* Use grid for better alignment */
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)) 100px; /* Auto-fit columns + a fixed-width button column */
+            gap: 15px;
+            align-items: end; /* Align items to the bottom */
+            margin-bottom: 15px;
+            padding: 15px;
+            background-color: #f7f9fb; /* Light background for entry */
+            border-radius: 8px;
+            border: 1px solid #e9edf1;
+        }
+
+        /* Ensure the remove button stays in its own column */
+        .schedule .remove-button {
+            grid-column: -2 / -1; /* Place in the last column */
+        }
+
+        /* --- Form Elements --- */
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 4px;
+        }
+
+        input[type="time"], input[type="number"], select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 1rem;
+            box-sizing: border-box; /* Include padding in width */
+        }
+
+        /* --- Buttons --- */
+        button {
+            padding: 8px 15px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            font-weight: 500;
+        }
+
+        button:hover {
+            background-color: var(--accent-color);
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .remove-button {
+            background-color: var(--error-color);
+            font-size: 0.85rem;
+            padding: 8px 10px; /* Smaller padding for better fit */
+        }
+
+        .remove-button:hover {
+            background-color: #d32f2f;
+        }
+
+        .day-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .copy-button {
+            background-color: #6c757d; /* Neutral gray */
+        }
+
+        .copy-button:hover {
+            background-color: #5a6268;
+        }
+
+        /* --- Save Button and Feedback --- */
+        .save-button {
+            display: block;
+            margin: 40px auto;
+            padding: 12px 30px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        #save-status {
+            text-align: center;
+            margin-top: -20px;
+            margin-bottom: 20px;
+            padding: 10px;
+            border-radius: 6px;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        #save-status.visible {
+            opacity: 1;
+        }
+
+        #save-status.success {
+            background-color: #e8f5e9;
+            color: var(--success-color);
+            border: 1px solid var(--success-color);
+        }
+
+        #save-status.error {
+            background-color: #ffebee;
+            color: var(--error-color);
+            border: 1px solid var(--error-color);
+        }
+
+        /* --- Responsiveness --- */
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+
+            .schedule {
+                grid-template-columns: 1fr 1fr; /* Two columns on mobile */
+                gap: 10px;
+            }
+
+            .schedule .remove-button {
+                grid-column: 2 / 3; /* Keep button in the second column */
+                width: 100%;
+            }
+
+            h1 {
+                font-size: 1.5em;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🗓 Schedule Configuration Panel</h1>
+    <div id="save-status"></div>
+    <div id="schedule-container"></div>
+    <button class="save-button" onclick="saveSettings()">💾 Save All Changes</button>
+</div>
+
+<script>
+    const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+    const states = ["Off", "Configuring", "Slow", "Medium", "Fast"];
+
+    /* --- Data Fetching and UI Rendering --- */
+    async function fetchSettings() {
+        // Mock API call for demonstration, replace with actual fetch
+        const res = await fetch('/api/get');
+        const data = await res.json();
+        // const data = { schedule: mockScheduleData }; // Use mock data
+        renderUI(data.schedule);
+    }
+
+    function renderUI(scheduleData) {
+        const container = document.getElementById('schedule-container');
+        container.innerHTML = '';
+
+        daysOfWeek.forEach((day, index) => {
+            const dayDiv = document.createElement('div');
+            dayDiv.className = 'day-section';
+
+            // Day section structure with new controls
+            dayDiv.innerHTML = `
+                <h3>${day}</h3>
+                <div id="day-${index}"></div>
+                <div class="day-controls">
+                    <button onclick="addSchedule(${index})">➕ Add Schedule</button>
+                    ${index > 0 ? `<button class="copy-button" onclick="copyPreviousDay(${index})">📋 Copy From ${daysOfWeek[index-1]}</button>` : ''}
+                </div>
+            `;
+            container.appendChild(dayDiv);
+
+            const schedules = scheduleData && scheduleData[index] ? scheduleData[index] : [];
+            // Duration is now in minutes in the data object
+            schedules.forEach(s => addSchedule(index, s));
+        });
+    }
+
+    /* --- Schedule Entry Management --- */
+    function addSchedule(dayIndex, schedule = { onDuration: 30, startTime: "09:00", state: "Off" }) {
+        const container = document.getElementById(`day-${dayIndex}`);
+        const div = document.createElement('div');
+        div.className = 'schedule';
+
+        const stateOptions = states.map(state =>
+            `<option value="${state}" ${schedule.state === state ? "selected" : ""}>${state}</option>`
+        ).join("");
+
+        div.innerHTML = `
+        <label>Start Time
+          <input type="time" value="${schedule.startTime}" class="start-time">
+        </label>
+        <label>Duration (Minutes)
+          <input type="number" value="${schedule.onDuration}" class="on-duration" min="1" title="Duration in minutes">
+        </label>
+        <label>State
+          <select class="state">${stateOptions}</select>
+        </label>
+        <button class="remove-button" onclick="this.closest('.schedule').remove()">🗑 Remove</button>
+      `;
+        container.appendChild(div);
+    }
+
+    /* --- UX Feature: Copy Day --- */
+    function copyPreviousDay(currentDayIndex) {
+        const prevDayContainer = document.getElementById(`day-${currentDayIndex - 1}`);
+        const currentDayContainer = document.getElementById(`day-${currentDayIndex}`);
+
+        // Clear existing schedules for the current day
+        currentDayContainer.innerHTML = '';
+
+        // Find schedules from the previous day
+        const schedulesToCopy = Array.from(prevDayContainer.querySelectorAll('.schedule'));
+
+        if (schedulesToCopy.length === 0) {
+            showSaveStatus('ℹ️ Nothing to copy from ' + daysOfWeek[currentDayIndex - 1], 'success', 2000);
+            return;
+        }
+
+        schedulesToCopy.forEach(scheduleElement => {
+            const startTime = scheduleElement.querySelector('.start-time').value;
+            const onDuration = parseInt(scheduleElement.querySelector('.on-duration').value);
+            const state = scheduleElement.querySelector('.state').value;
+
+            // Add a new schedule entry with the copied values
+            addSchedule(currentDayIndex, { startTime, onDuration, state });
+        });
+
+        showSaveStatus(`✅ Copied schedule from ${daysOfWeek[currentDayIndex - 1]}!`, 'success', 2000);
+    }
+
+    /* --- Save Functionality --- */
+    async function saveSettings() {
+        const schedule = {};
+
+        daysOfWeek.forEach((_, index) => {
+            const daySchedules = [];
+            const container = document.getElementById(`day-${index}`);
+            const entries = container.querySelectorAll('.schedule');
+
+            entries.forEach(entry => {
+                const startTime = entry.querySelector('.start-time').value;
+                const durationMinutes = parseInt(entry.querySelector('.on-duration').value);
+                const state = entry.querySelector('.state').value;
+
+                // Basic validation
+                if (!startTime || isNaN(durationMinutes) || durationMinutes < 1) {
+                    showSaveStatus(`⚠️ Validation Error on ${daysOfWeek[index]}. Please check all entries.`, 'error');
+                    throw new Error("Validation failed"); // Stop save process
+                }
+
+                daySchedules.push({
+                    startTime,
+                    // Sending duration in minutes; backend should handle conversion to nanoseconds (if needed)
+                    onDuration: durationMinutes,
+                    state
+                });
+            });
+
+            if (daySchedules.length > 0) {
+                schedule[index] = daySchedules;
+            }
+        });
+
+        // Mock API Call
+        const saveSuccessful = Math.random() > 0.1; // Simulate 90% success rate
+
+        if (saveSuccessful) {
+            showSaveStatus('✅ Settings saved successfully!', 'success');
+        } else {
+            showSaveStatus('❌ Error saving settings. Please try again.', 'error');
+        }
+
+         // Actual API Call (Uncomment when connecting to a backend)
+        try {
+            const res = await fetch('/api/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ schedule })
+            });
+
+            if (res.ok) {
+                showSaveStatus('✅ Settings saved successfully!', 'success');
+            } else {
+                throw new Error('Server error');
+            }
+        } catch (error) {
+            showSaveStatus('❌ Error saving settings. Please try again.', 'error');
+        }
+
+    }
+
+    /* --- UX Feature: Save Status Feedback --- */
+    function showSaveStatus(message, type, duration = 5000) {
+        const statusDiv = document.getElementById('save-status');
+        statusDiv.textContent = message;
+        statusDiv.className = `visible ${type}`;
+
+        setTimeout(() => {
+            statusDiv.className = ''; // Hide after duration
+        }, duration);
+    }
+
+    fetchSettings();
+</script>
+</body>
+</html>
